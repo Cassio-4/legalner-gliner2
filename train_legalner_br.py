@@ -16,9 +16,7 @@ Example:
     python scripts/train_lener_br.py --output-dir ./lener_model --epochs 10 --eval-test
     python scripts/train_lener_br.py --dataset ulysses --output-dir ./ulysses_model --eval-test
 """
-
 from __future__ import annotations
-
 import argparse
 import json
 import subprocess
@@ -26,20 +24,16 @@ import sys
 import unicodedata
 from dataclasses import asdict
 from pathlib import Path
-
 import torch
 from gliner2 import AutoExtractor
 from gliner2.training.data import InputExample, TrainingDataset
 from gliner2.training.trainer import ExtractorTrainer, TrainingConfig
-
 import eval_legalner_br
-
 
 def normalize_label(label: str) -> str:
     """``organização`` -> ``organizacao`` (matches eval_lener_br's query names)."""
     decomposed = unicodedata.normalize("NFKD", label)
     return "".join(c for c in decomposed if not unicodedata.combining(c)).lower()
-
 
 def ensure_jsonl(data_dir: Path) -> None:
     missing = [s for s in ("train", "dev", "test") if not (data_dir / f"{s}.jsonl").exists()]
@@ -49,7 +43,6 @@ def ensure_jsonl(data_dir: Path) -> None:
             [sys.executable, str(data_dir / "conll_to_gliner2.py"), str(data_dir), str(data_dir)],
             check=True,
         )
-
 
 def load_split(path: Path, descriptions: dict[str, str], use_descriptions: bool) -> TrainingDataset:
     """Load a JSONL split; ``descriptions`` maps entity name (as eval queries it) -> description."""
@@ -67,7 +60,6 @@ def load_split(path: Path, descriptions: dict[str, str], use_descriptions: bool)
             )
         )
     return TrainingDataset(examples)
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -236,7 +228,6 @@ def main() -> None:
             device="cuda" if torch.cuda.is_available() else "cpu",
             output=Path(args.output_dir) / "test_metrics.json",
         )
-
 
 if __name__ == "__main__":
     main()

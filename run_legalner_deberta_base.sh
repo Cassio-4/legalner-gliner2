@@ -10,8 +10,8 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GPU="${GPU:-1}"
-SEED="${SEED:-914}"
-OUT="${1:-/home/ubuntu/dev/legalner-gliner2/output/deberta_base_ulysses_s${SEED}}"
+SEED="${SEED:-42}"
+OUT="${1:-/home/ubuntu/dev/legalner-gliner2/output/EXP-02/gliner2_mDeBERTa_base_lener_s${SEED}}"
 
 if [ -d "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then
     echo "Output dir $OUT already exists and is not empty; pass a different one." >&2
@@ -23,9 +23,9 @@ cd "$REPO_DIR"
 echo "Training on GPU $GPU, seed $SEED -> $OUT (log: $OUT/train.log)"
 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True PYTHONPATH=. CUDA_VISIBLE_DEVICES="$GPU" \
 python train_legalner_br.py \
-  --model fastino/gliner2.5-base-v1 \
-  --dataset ulysses \
-  --output-dir "$OUT" --run-name "gliner2_deberta_base_ulysses_s${SEED}" \
+  --model fastino/gliner2.5-multi-v1 \
+  --dataset lener \
+  --output-dir "$OUT" --run-name "gliner2_mDeBERTa_base_lener_s${SEED}" \
   --epochs 30 --batch-size 8 --grad-accum 2 --eval-batch-size 8 \
   --encoder-lr 2e-5 --task-lr 2e-5 --weight-decay 0 \
   --scheduler cosine --warmup-steps 500 \
