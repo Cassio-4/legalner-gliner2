@@ -2,6 +2,8 @@
 # Fine-tune GLiNER2 (deberta-v3-base encoder) on LeNER-Br and score best/ on the test split.
 # Hyperparameters mirror legalner/configs/base.yaml + legalner/configs/std_ner/deberta_base.yaml,
 # with batch 4 x grad-accum 4 (same effective batch 16) so it fits a 12 GB GPU without OOMs.
+# Lora modules (claude): span_rep, count_embed and count_pred are names from the older span architecture.
+#   They don't exist in this model, so they match nothing.
 #
 # Usage: bash run_legalner_deberta_base.sh [output_dir]
 #   GPU=0 bash run_legalner_deberta_base.sh      # pick another GPU (default: 1)

@@ -156,8 +156,21 @@ def evaluate(
     texts, golds = load_split(ds, split, limit=max_samples)
     print(f"Loaded {len(texts)} sentences from the '{split}' split of {dataset}.")
 
-    print(f"Loading {model} (device={device})...")
-    extractor = AutoExtractor.from_pretrained(model, map_location=device)
+    model_dir = Path(model)
+    print(f"Loading {model_dir} (device={device})...")
+    if (model_dir / "config.json").exists() and (model_dir / "model.safetensors").exists():
+        extractor = AutoExtractor.from_pretrained(model, map_location=device)
+    elif (model_dir / "adapter_config.json").exists():
+        from peft import PeftModel
+        print(f"Couldn't find full model checkpoint: {model_dir}. Trying for LoRA weights")
+        adapter_cfg = json.loads((model_dir / "adapter_config.json").read_text())
+        base_model_id = adapter_cfg["base_model_name_or_path"]
+        print(f"Found existing best LoRA weights {model_dir}.")
+        extractor = AutoExtractor.from_pretrained(base_model_id, map_location=device)
+        extractor = PeftModel.from_pretrained(extractor, model_dir).merge_and_unload()
+        extractor.to(device)
+    else:
+        raise FileNotFoundError(f"{model_dir} has neither config.json + model.safetensors nor adapter_config.json")
 
     t0 = time.time()
     results = extractor.batch_extract_entities(

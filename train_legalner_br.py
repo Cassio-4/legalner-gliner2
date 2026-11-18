@@ -110,6 +110,12 @@ def main() -> None:
     parser.add_argument("--lora-r", type=int, default=16)
     parser.add_argument("--lora-alpha", type=float, default=32.0)
     parser.add_argument("--lora-dropout", type=float, default=0.1)
+    parser.add_argument(
+        "--lora-target-modules",
+        nargs="+",
+        default=["encoder", "span_rep", "classifier", "count_embed", "count_pred"],
+        help="Modules that get LoRA adapters (only used with --lora); default matches TrainingConfig",
+    )
     # Logging
     parser.add_argument("--wandb-project", default=None, help="Enable W&B logging to this project")
     parser.add_argument("--run-name", default=None)
@@ -180,6 +186,7 @@ def main() -> None:
         lora_r=args.lora_r,
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
+        lora_target_modules=args.lora_target_modules,
         # Save full (merged) weights so best/ loads with AutoExtractor.from_pretrained.
         save_adapter_only=False,
     )

@@ -93,3 +93,44 @@ Notes:
 - Seed 42 ran all 30 epochs and was still improving at epoch 30 (dev loss 75.9 → 73.7).
 - Despite the very different dev losses, test micro F1 differs by only 0.6 points.
 - With n=2 the std is not reliable. More seeds are needed.
+
+### EXP-03: LeNER-Br, gliner2.5-multi-v1 (mDeBERTa-v3-base), LoRA, effective batch 16
+
+Same as EXP-02, except it uses LoRA instead of full fine-tuning and a higher learning rate.
+
+| Setting | Value |
+|---|---|
+| Model | `fastino/gliner2.5-multi-v1` |
+| Dataset | `lener` (test: 1389 sentences) |
+| Training | **LoRA** (overrides shared): r=8, alpha=16, dropout 0.05, targets `encoder` + `extractive_head`. 1,498,800 trainable / 288,853,959 total params (0.52%) |
+| Learning rate | **2e-4** (`task_lr`, overrides shared). Only `task_lr` applies to LoRA params. `encoder_lr` (1e-5 in the config) has no effect. |
+| Batch | 8 × grad accum 2 = effective 16, eval batch 8 |
+| Launcher | `run_exp03.sh` |
+| Runs | `output/EXP-03/gliner2_mDeBERTa-v3-base_lener_s{0,42,135,295,515}` |
+
+| Seed | Micro F1 | Epochs | Best dev loss | Train time (min) |
+|---:|---:|---:|---:|---:|
+| 0 | 0.8848 | 7 | 103.88 | 77.4 |
+| 42 | 0.9045 | 11 | 97.82 | 116.8 |
+| 135 | 0.9008 | 30 | 74.73 | 367.1 |
+| 295 | 0.8970 | 9 | 101.48 | 109.7 |
+| 515 | 0.8949 | 30 | 73.94 | 366.2 |
+
+**Micro F1 (n=5): 0.8964 ± 0.0075** (min 0.8848, max 0.9045). Macro F1: 0.8714 ± 0.0150.
+
+Notes:
+
+- `training_config.json` is identical across the 5 seeds, apart from `seed` and the run name/path.
+- Three seeds early-stopped: seed 0 (best dev loss at epoch 2), seed 42 (epoch 6) and
+  seed 295 (epoch 4). Seeds 135 and 515 ran all 30 epochs, and both were still improving
+  at epoch 30 (dev loss → 74.7 and 73.9). The same split appeared in EXP-02.
+- Lower dev loss does not track test F1 well. The two 30-epoch seeds (dev ~74) score
+  0.9008 and 0.8949. Seed 42 stopped at a dev loss of 97.8 and scored the highest (0.9045).
+- LOCAL (support 47) is the weakest and noisiest class: F1 ranges from 0.608 (seed 0)
+  to 0.777 (seed 42). It accounts for most of the macro F1 spread.
+- In seeds 0 and 42, the test eval at the end of training crashed while loading the LoRA
+  `best/` checkpoint (HF repo-id error). Their `best/` was scored afterwards with
+  `eval_legalner_br.py` (see `test_eval.log` in those runs). Seeds 135, 295 and 515 were
+  scored inside the training run.
+- Mean micro F1 (0.8964) is in line with EXP-02's full fine-tune (0.8975, n=2). LoRA
+  trains about 0.5% of the parameters.
